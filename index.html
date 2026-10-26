@@ -40,13 +40,29 @@ textarea{min-height:84px;resize:vertical}
 #ov.on{display:flex}#ov img{max-width:94%;max-height:78%;border-radius:16px}
 #ov button{border:0;border-radius:999px;padding:10px 20px;font:inherit;background:var(--card);color:var(--tx)}
 #toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:30;background:var(--card);color:var(--tx);padding:10px 18px;border-radius:18px;box-shadow:0 6px 20px #c57aa066;font-size:14px;max-width:90%;text-align:center;display:none}
+#gd{position:fixed;inset:0;background:#3b1f3399;z-index:25;display:none;align-items:center;justify-content:center;padding:16px}#gd.on{display:flex}
+#gd .card{background:var(--card);border-radius:28px;padding:22px 20px;max-width:460px;width:100%;max-height:92%;overflow:auto;box-shadow:0 10px 40px #0004}
+#gd h3{margin:0 0 4px;font-size:21px}#gd h4{margin:16px 0 4px;font-size:15px}#gd p,#gd li{font-size:14px;line-height:1.5;margin:4px 0}#gd ol{padding-left:20px;margin:4px 0}
+#gd .ac{display:grid;gap:8px;margin-top:10px}#gd .ac button{border:2px solid var(--line);background:var(--bg);color:var(--tx);border-radius:16px;padding:11px;font:inherit;font-size:15px}
+#gd .ok{width:100%;margin-top:14px;padding:13px;border:0;border-radius:18px;background:var(--acc);color:#fff;font:inherit;font-weight:600;font-size:16px}
+.warn{background:var(--bg);border-radius:14px;padding:10px 12px}
 </style></head><body>
 <div id="wrap">
 <div id="map"></div>
 <div class="bar"><div class="pill">💌 Il mio diario di viaggio</div><div class="pill" id="cnt">🌍 0</div></div>
 <div class="hint" id="hint">tocca un paese per segnarlo ✨</div>
-<div class="zm"><button id="pb" title="Importa foto">📸</button><button id="eb" title="Salva backup">💾</button><button id="ib" title="Carica backup">📥</button><button id="zi">+</button><button id="zo">−</button></div>
+<div class="zm"><button id="gb" title="Guida">📖</button><button id="zi">+</button><button id="zo">−</button></div>
 <div id="sheet"></div>
+<div id="gd"><div class="card"><h3>Come funziona 💌</h3>
+<h4>🗺️ Segnare i paesi</h4><p>Tocca un paese sulla mappa e premi “Visitato!”: si colora e compare la bandierina. Poi aggiungi stelline, note e diario nella schedina.</p>
+<h4>📷 Le foto</h4><p>Apri la schedina del paese e premi <b>“Aggiungi foto”</b>: le foto che scegli finiscono lì. Con <b>“Trova per posizione”</b> scegli tante foto insieme e tengo solo quelle scattate in quel paese (servono foto con la posizione GPS). Sulla schermata di scelta dell’iPhone, tocca “Opzioni” e attiva “Posizione”.</p>
+<h4>🔄 Telefono e computer</h4>
+<div class="warn"><p><b>Attenzione:</b> il diario è salvato solo sul dispositivo che stai usando. Telefono e computer <b>non sono collegati</b>: quello che scrivi su uno non compare sull’altro.</p></div>
+<p>Per portare tutto da un dispositivo all’altro:</p>
+<ol><li>Sul dispositivo con i dati premi <b>Salva backup</b>.</li><li>Mandati il file (AirDrop, mail, WhatsApp, iCloud…).</li><li>Sull’altro dispositivo apri il sito, premi <b>Carica backup</b> e scegli quel file.</li></ol>
+<p>Fai un backup ogni tanto anche per sicurezza: se cancelli i dati del browser, li perdi.</p>
+<div class="ac"><button id="eb">💾 Salva backup</button><button id="ib">📥 Carica backup</button><button id="pb">📸 Smista foto di tutto il mondo</button></div>
+<button class="ok" id="gok">Ho capito 💖</button></div></div>
 <div id="toast"></div>
 <div id="ov"><img><button data-d="1">🗑 elimina foto</button><button>chiudi</button></div>
 <input type="file" id="bi" accept=".json,application/json" hidden>
@@ -99,14 +115,14 @@ function paint(){
 function render(){
   const p=places[cur.id],t=sheet.scrollTop;
   let h=`<div class="grab"></div><div class="hd"><span class="fl">${cur.fl}</span><h2>${cur.name}</h2><button data-a="x">✕</button></div>`;
-  if(!p)h+=`<button class="big" data-a="go">Visitato! 💖</button><button class="big sm" data-a="ph">📸 Trova le mie foto qui</button><p class="tip">${TIP}</p>`;
+  if(!p)h+=`<button class="big" data-a="go">Visitato! 💖</button>${PB}`;
   else{
     h+=`<label class="t">Il suo colore</label><div class="sw">${COL.map(c=>`<b data-c="${c}" class="${p.c==c?"on":""}" style="background:${c}"></b>`).join("")}</div>
     <label class="t">Quando ci sono stata/o</label><input type="date" data-f="d">
     <label class="t">Le mie stelline</label>${RT.map(([k,e,l])=>`<div class="row"><span>${e} ${l}</span><span class="st">${[1,2,3,4,5].map(v=>`<i data-k="${k}" data-v="${v}" class="${p.r[k]>=v?"on":""}">★</i>`).join("")}</span></div>`).join("")}
     <label class="t">Da non dimenticare (cibo, posti, mostre…)</label><textarea data-f="a" placeholder="es. il gelato al pistacchio in quella piazzetta 🍨"></textarea>
     <label class="t">Diario</label><textarea data-f="n" placeholder="Com’è andata? Cosa ho sentito?"></textarea>
-    <label class="t">📸 Foto</label><div class="ph" id="ph"></div><button class="big sm" data-a="ph">📸 Trova le mie foto qui</button><p class="tip">${TIP}</p>
+    <label class="t">📷 Foto</label><div class="ph" id="ph"></div>${PB}
     <button class="rm" data-a="rm">togli dai visitati</button>`;
   }
   sheet.innerHTML=h;
@@ -118,15 +134,17 @@ sheet.addEventListener("click",e=>{
   if(el.dataset.a=="x")sheet.classList.remove("open");
   else if(el.dataset.a=="go"){places[cur.id]=np();save();paint();render()}
   else if(el.dataset.a=="rm"){if(confirm("Vuoi davvero toglierlo? Perdi anche note e foto.")){delPh(cur.id);delete places[cur.id];save();paint();render()}}
-  else if(el.dataset.a=="ph"){only=cur.id;fi.click()}
+  else if(el.dataset.a=="ph"){only=cur.id;manual=false;fi.click()}
+  else if(el.dataset.a=="phm"){only=cur.id;manual=true;fi.click()}
   else if(el.dataset.pid){ov.querySelector("img").src=el.src;ov.dataset.pid=el.dataset.pid;ov.classList.add("on")}
   else if(el.dataset.c){p.c=el.dataset.c;save();paint();render()}
   else if(el.dataset.k){const v=+el.dataset.v;p.r[el.dataset.k]=p.r[el.dataset.k]==v?0:v;save();render()}
 });
 sheet.addEventListener("input",e=>{const f=e.target.dataset.f;if(f&&places[cur.id]){places[cur.id][f]=e.target.value;save()}});
 // foto
+const PB=`<button class="big sm" data-a="phm">📷 Aggiungi foto</button><button class="big sm" data-a="ph">📍 Trova per posizione</button><p class="tip">“Aggiungi foto” mette nella schedina tutte le foto che scegli. “Trova per posizione” tiene solo quelle scattate in questo paese.</p>`;
 const TIP="Scegli le foto dalla libreria (anche tutte insieme): tengo solo quelle con la posizione GPS dentro questo paese. Le foto restano sul tuo telefono, non vengono caricate da nessuna parte. Se l’iPhone toglie la posizione, nel selettore tocca “Opzioni” in basso e attiva “Posizione”.";
-const fi=document.getElementById("fi"),ov=document.getElementById("ov"),tz=document.getElementById("toast");let only=null,tt;
+const gd=document.getElementById("gd"),fi=document.getElementById("fi"),ov=document.getElementById("ov"),tz=document.getElementById("toast");let only=null,manual=false,tt;
 const toast=(m,ms)=>{tz.textContent=m;tz.style.display="block";clearTimeout(tt);if(ms)tt=setTimeout(()=>tz.style.display="none",ms)};
 const idb=new Promise((res,rej)=>{try{const r=indexedDB.open("diario-foto",1);r.onupgradeneeded=()=>{const s=r.result.createObjectStore("p",{keyPath:"id",autoIncrement:true});s.createIndex("k","k");s.createIndex("s","s",{unique:true})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
 const tx=async(m,f)=>{const db=await idb;return new Promise((res,rej)=>{const t=db.transaction("p",m),r=f(t.objectStore("p"));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})};
@@ -151,17 +169,16 @@ function where0(pt){for(const f of feats){const b=f._b,x=pt[0];const inx=b[0][0]
   if(inx&&pt[1]>=b[0][1]&&pt[1]<=b[1][1]&&d3.geoContains(f,pt))return key(f)}return null}
 async function thumb(file){const bm=await createImageBitmap(file),s=Math.min(1,720/Math.max(bm.width,bm.height)),c=document.createElement("canvas");
   c.width=bm.width*s|0;c.height=bm.height*s|0;c.getContext("2d").drawImage(bm,0,0,c.width,c.height);return new Promise(r=>c.toBlob(r,"image/jpeg",.72))}
-async function imp(files,only){let ok=0,nogps=0,other=0,dup=0,fail=0;const found=new Set();
+async function imp(files,only,manual){let ok=0,nogps=0,other=0,dup=0,fail=0;const found=new Set();
   for(let i=0;i<files.length;i++){const f=files[i];if(i%4==0)toast(`Leggo le foto… ${i+1}/${files.length}`);
-    const pt=await gps(f);if(!pt){nogps++;continue}
-    const k=where(pt);if(!k||(only&&k!==only)){other++;continue}
+    let k;if(manual)k=only;else{const pt=await gps(f);if(!pt){nogps++;continue}k=where(pt);if(!k||(only&&k!==only)){other++;continue}}
     let b;try{b=await thumb(f)}catch(e){fail++;continue}
-    try{await tx("readwrite",s=>s.add({k,b,s:f.name+"|"+f.size+"|"+f.lastModified}));ok++;found.add(k)}catch(e){dup++}}
+    try{await tx("readwrite",s=>s.add({k,b,s:k+"|"+f.name+"|"+f.size+"|"+f.lastModified}));ok++;found.add(k)}catch(e){dup++}}
   found.forEach(k=>{if(!places[k])places[k]=np()});save();paint();
   if(cur&&sheet.classList.contains("open"))render();
   toast(`📸 ${ok} foto aggiunte`+(found.size>1||!only?` in ${found.size} paesi`:"")+(other?` · ${other} ${only?"di altri posti":"fuori da ogni paese"}`:"")+(nogps?` · ${nogps} senza posizione`:"")+(dup?` · ${dup} già presenti`:"")+(fail?` · ${fail} non leggibili`:""),7000)}
-document.getElementById("pb").onclick=()=>{only=null;fi.click()};
-fi.onchange=()=>{const l=[...fi.files];fi.value="";if(l.length)imp(l,only)};
+document.getElementById("pb").onclick=()=>{only=null;manual=false;gd.classList.remove("on");fi.click()};
+fi.onchange=()=>{const l=[...fi.files];fi.value="";if(l.length)imp(l,only,manual)};
 ov.addEventListener("click",async e=>{if(e.target.dataset.d){await tx("readwrite",s=>s.delete(+ov.dataset.pid)).catch(()=>{});if(cur)loadPh()}if(e.target.tagName!=="IMG")ov.classList.remove("on")});
 // backup
 const bi=document.getElementById("bi");
@@ -181,8 +198,10 @@ async function impBackup(file){let d;toast("Importo il backup…");
   for(const x of d.photos||[]){try{const b=await (await fetch(x.b)).blob();await tx("readwrite",s=>s.add({k:x.k,b,s:x.s}));ph++}catch(e){}}
   save(true);paint();if(cur&&sheet.classList.contains("open"))render();
   toast(`📥 Fatto! ${add} paesi nuovi, ${upd} aggiornati, ${ph} foto nuove`,7000)}
-document.getElementById("eb").onclick=expBackup;
-document.getElementById("ib").onclick=()=>bi.click();
+document.getElementById("eb").onclick=()=>{gd.classList.remove("on");expBackup()};
+document.getElementById("ib").onclick=()=>{gd.classList.remove("on");bi.click()};
+document.getElementById("gb").onclick=()=>gd.classList.add("on");
+document.getElementById("gok").onclick=()=>gd.classList.remove("on");
 bi.onchange=()=>{const f=bi.files[0];bi.value="";if(f)impBackup(f)};
 // pan & zoom
 const ptr=new Map();
@@ -205,4 +224,5 @@ document.getElementById("zo").onclick=()=>zoom(1/1.5,box.clientWidth/2,box.clien
 window.addEventListener("resize",ap);
 if(box.clientWidth<box.clientHeight){S=2.4;X=box.clientWidth/2-S*box.clientWidth*.52;Y=(1-S)*box.clientHeight/2}
 paint();
+try{if(!localStorage.getItem("diario-guida")){gd.classList.add("on");localStorage.setItem("diario-guida","1")}}catch(e){}
 </script></body></html>
