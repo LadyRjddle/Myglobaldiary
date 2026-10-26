@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Il mio diario di viaggio</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff0f6;--ocean:#dff1ff;--land:#fffaf3;--line:#f4c6d8;--card:#fffafc;--tx:#6b4a63;--soft:#b995ad;--acc:#ff9ec4;--star:#d9d2dd;--on:#ffc94d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#2a2433;--ocean:#2c3350;--land:#4d4560;--line:#6a5a80;--card:#3a3248;--tx:#f6e8f2;--soft:#b9a3c4;--star:#5d526b}}
+:root[data-theme="dark"]{--bg:#2a2433;--ocean:#2c3350;--land:#4d4560;--line:#6a5a80;--card:#3a3248;--tx:#f6e8f2;--soft:#b9a3c4;--star:#5d526b}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font-family:"Fredoka","Quicksand",system-ui,sans-serif;overflow:hidden}
+#wrap{position:relative;height:100%}
+#map{position:absolute;inset:0;background:var(--ocean);overflow:hidden;touch-action:none}
+#map svg{transform-origin:0 0;display:block}
+.bar{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;pointer-events:none;z-index:2}
+.pill{background:var(--card);border-radius:999px;padding:8px 16px;font-weight:600;box-shadow:0 4px 14px #d68aa955;font-size:15px}
+.zm{position:absolute;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;z-index:2}
+.zm button{width:44px;height:44px;border-radius:50%;border:0;background:var(--card);color:var(--tx);font-size:22px;font-family:inherit;box-shadow:0 4px 12px #d68aa955}
+.hint{position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));text-align:center;font-size:13px;color:var(--soft);pointer-events:none}
+#sheet{position:absolute;z-index:5;left:50%;bottom:0;width:min(100%,460px);max-height:82%;overflow:auto;background:var(--card);border-radius:28px 28px 0 0;padding:10px 20px calc(24px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px #c57aa044;transform:translate(-50%,115%);transition:transform .35s cubic-bezier(.3,1.3,.5,1)}
+#sheet.open{transform:translate(-50%,0)}
+.grab{width:44px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.hd{display:flex;align-items:center;gap:10px}.hd h2{flex:1;margin:0;font-size:22px}.fl{font-size:36px}
+.hd button{border:0;background:var(--bg);color:var(--tx);width:34px;height:34px;border-radius:50%;font-size:16px}
+.big{width:100%;margin-top:16px;padding:14px;border:0;border-radius:20px;background:var(--acc);color:#fff;font:600 18px inherit;font-family:inherit}
+label.t{display:block;font-size:13px;color:var(--soft);margin:16px 0 6px;font-weight:500}
+.sw{display:flex;gap:8px;flex-wrap:wrap}.sw b{width:30px;height:30px;border-radius:50%;border:3px solid transparent;cursor:pointer}.sw b.on{border-color:var(--tx)}
+input[type=date],textarea{width:100%;border:2px solid var(--line);background:var(--bg);color:var(--tx);border-radius:16px;padding:10px 12px;font:inherit;font-size:15px}
+textarea{min-height:84px;resize:vertical}
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 0}
+.st i{font-style:normal;font-size:28px;color:var(--star);cursor:pointer;padding:0 1px}.st i.on{color:var(--on)}
+.rm{margin-top:16px;border:0;background:none;color:var(--soft);font:inherit;font-size:13px;text-decoration:underline}
+.flagm{pointer-events:none;font-size:9px}
+</style></head><body>
+<div id="wrap">
+<div id="map"></div>
+<div class="bar"><div class="pill">💌 Il mio diario di viaggio</div><div class="pill" id="cnt">🌍 0</div></div>
+<div class="hint" id="hint">tocca un paese per segnarlo ✨</div>
+<div class="zm"><button id="zi">+</button><button id="zo">−</button></div>
+<div id="sheet"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/datamaps@0.5.9/dist/datamaps.world.min.js"></script>
+<script>
+const KEY="diario-mondo-v1";let places={};
+try{places=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(places))}catch(e){}};
+const I2={};
+const L="AFG AF ALB AL DZA DZ AGO AO ARG AR ARM AM AUS AU AUT AT AZE AZ BHS BS BGD BD BLR BY BEL BE BLZ BZ BEN BJ BTN BT BOL BO BIH BA BWA BW BRA BR BRN BN BGR BG BFA BF BDI BI KHM KH CMR CM CAN CA CAF CF TCD TD CHL CL CHN CN COL CO COG CG COD CD CRI CR CIV CI HRV HR CUB CU CYP CY CZE CZ DNK DK DJI DJ DOM DO ECU EC EGY EG SLV SV GNQ GQ ERI ER EST EE ETH ET FJI FJ FIN FI FRA FR GAB GA GMB GM GEO GE DEU DE GHA GH GRC GR GRL GL GTM GT GIN GN GNB GW GUY GY HTI HT HND HN HUN HU ISL IS IND IN IDN ID IRN IR IRQ IQ IRL IE ISR IL ITA IT JAM JM JPN JP JOR JO KAZ KZ KEN KE PRK KP KOR KR XKX XK KWT KW KGZ KG LAO LA LVA LV LBN LB LSO LS LBR LR LBY LY LTU LT LUX LU MKD MK MDG MG MWI MW MYS MY MLI ML MRT MR MEX MX MDA MD MNG MN MNE ME MAR MA MOZ MZ MMR MM NAM NA NPL NP NLD NL NZL NZ NIC NI NER NE NGA NG NOR NO OMN OM PAK PK PAN PA PNG PG PRY PY PER PE PHL PH POL PL PRT PT PRI PR QAT QA ROU RO RUS RU RWA RW SAU SA SEN SN SRB RS SLE SL SGP SG SVK SK SVN SI SLB SB SOM SO ZAF ZA SSD SS ESP ES LKA LK SDN SD SUR SR SWZ SZ SWE SE CHE CH SYR SY TWN TW TJK TJ TZA TZ THA TH TLS TL TGO TG TTO TT TUN TN TUR TR TKM TM UGA UG UKR UA ARE AE GBR GB USA US URY UY UZB UZ VUT VU VEN VE VNM VN YEM YE ZMB ZM ZWE ZW PSE PS NCL NC".split(" ");
+for(let i=0;i<L.length;i+=2)I2[L[i]]=L[i+1];
+const flag=id=>I2[id]?String.fromCodePoint(...[...I2[id]].map(x=>127397+x.charCodeAt(0))):"🏳️";
+const COL=["#ffc8dd","#ffd6a5","#fdf3a0","#caffbf","#9bf6ff","#a0c4ff","#bdb2ff","#ffc6ff"];
+const RT=[["food","🍝","Cibo"],["people","🫶","Persone"],["sights","🏛️","Monumenti & mostre"],["vibe","✨","Atmosfera"]];
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let dm,svg,cur=null;
+const sheet=document.getElementById("sheet");
+function nm(g){try{return new Intl.DisplayNames(["it"],{type:"region"}).of(I2[g.id])}catch(e){return g.properties.name}}
+function paint(){
+  const land=css("--land");
+  svg.selectAll(".datamaps-subunit").style("fill",d=>places[d.id]?places[d.id].c:land);
+  svg.selectAll(".flagm").remove();
+  let n=0;
+  for(const id in places){n++;
+    const node=svg.select(".datamaps-subunit."+id).node();if(!node)continue;
+    const b=node.getBBox();
+    d3.select(node.parentNode.parentNode).append("text").attr("class","flagm").attr("x",b.x+b.width/2).attr("y",b.y+b.height/2).attr("text-anchor","middle").attr("dominant-baseline","middle").text(flag(id));
+  }
+  document.getElementById("cnt").textContent="🌍 "+n+" · "+(n/195*100).toFixed(1).replace(".",",")+"%";
+  document.getElementById("hint").style.display=n?"none":"block";
+}
+function render(){
+  const p=places[cur.id],t=sheet.scrollTop;
+  let h=`<div class="grab"></div><div class="hd"><span class="fl">${flag(cur.id)}</span><h2>${cur.name}</h2><button data-a="x">✕</button></div>`;
+  if(!p)h+=`<button class="big" data-a="go">Visitato! 💖</button>`;
+  else{
+    h+=`<label class="t">Il suo colore</label><div class="sw">${COL.map(c=>`<b data-c="${c}" class="${p.c==c?"on":""}" style="background:${c}"></b>`).join("")}</div>
+    <label class="t">Quando ci sono stata/o</label><input type="date" data-f="d">
+    <label class="t">Le mie stelline</label>${RT.map(([k,e,l])=>`<div class="row"><span>${e} ${l}</span><span class="st">${[1,2,3,4,5].map(v=>`<i data-k="${k}" data-v="${v}" class="${p.r[k]>=v?"on":""}">★</i>`).join("")}</span></div>`).join("")}
+    <label class="t">Da non dimenticare (cibo, posti, mostre…)</label><textarea data-f="a" placeholder="es. il gelato al pistacchio in quella piazzetta 🍨"></textarea>
+    <label class="t">Diario</label><textarea data-f="n" placeholder="Com’è andata? Cosa ho sentito?"></textarea>
+    <button class="rm" data-a="rm">togli dai visitati</button>`;
+  }
+  sheet.innerHTML=h;
+  if(p){sheet.querySelector('[data-f=d]').value=p.d||"";sheet.querySelector('[data-f=a]').value=p.a||"";sheet.querySelector('[data-f=n]').value=p.n||""}
+  sheet.scrollTop=t;
+}
+sheet.addEventListener("click",e=>{
+  const el=e.target,p=places[cur.id];
+  if(el.dataset.a=="x")sheet.classList.remove("open");
+  else if(el.dataset.a=="go"){places[cur.id]={c:COL[Math.floor(Math.random()*COL.length)],d:"",a:"",n:"",r:{}};save();paint();render()}
+  else if(el.dataset.a=="rm"){if(confirm("Vuoi davvero toglierlo? Perdi anche le note.")){delete places[cur.id];save();paint();render()}}
+  else if(el.dataset.c){p.c=el.dataset.c;save();paint();render()}
+  else if(el.dataset.k){const v=+el.dataset.v;p.r[el.dataset.k]=p.r[el.dataset.k]==v?0:v;save();render()}
+});
+sheet.addEventListener("input",e=>{const f=e.target.dataset.f;if(f&&places[cur.id]){places[cur.id][f]=e.target.value;save()}});
+// pan & zoom
+const box=document.getElementById("map");let S=1,X=0,Y=0,moved=false,mv=0,ld=0;const ptr=new Map();
+function ap(){const W=box.clientWidth,H=box.clientHeight;X=Math.min(0,Math.max(X,-(S-1)*W));Y=Math.min(0,Math.max(Y,-(S-1)*H));const s=box.querySelector("svg");if(s)s.style.transform=`translate(${X}px,${Y}px) scale(${S})`}
+function zoom(f,cx,cy){const ns=Math.min(14,Math.max(1,S*f));X=cx-(cx-X)*(ns/S);Y=cy-(cy-Y)*(ns/S);S=ns;ap()}
+box.addEventListener("pointerdown",e=>{ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});moved=false;mv=0;if(ptr.size==2){const[a,b]=[...ptr.values()];ld=Math.hypot(a.x-b.x,a.y-b.y);moved=true}});
+box.addEventListener("pointermove",e=>{
+  if(!ptr.has(e.pointerId))return;const o=ptr.get(e.pointerId);
+  const n={x:e.clientX,y:e.clientY};ptr.set(e.pointerId,n);
+  if(ptr.size==1){X+=n.x-o.x;Y+=n.y-o.y;mv+=Math.abs(n.x-o.x)+Math.abs(n.y-o.y);if(mv>8)moved=true;ap()}
+  else if(ptr.size==2){const[a,b]=[...ptr.values()],d=Math.hypot(a.x-b.x,a.y-b.y),r=box.getBoundingClientRect();zoom(d/ld,(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top);ld=d}
+});
+["pointerup","pointercancel","pointerleave"].forEach(t=>box.addEventListener(t,e=>ptr.delete(e.pointerId)));
+box.addEventListener("wheel",e=>{e.preventDefault();const r=box.getBoundingClientRect();zoom(e.deltaY<0?1.2:1/1.2,e.clientX-r.left,e.clientY-r.top)},{passive:false});
+document.getElementById("zi").onclick=()=>zoom(1.5,box.clientWidth/2,box.clientHeight/2);
+document.getElementById("zo").onclick=()=>zoom(1/1.5,box.clientWidth/2,box.clientHeight/2);
+dm=new Datamap({element:box,scope:"world",responsive:true,projection:"mercator",fills:{defaultFill:css("--land")},
+  geographyConfig:{highlightOnHover:false,popupOnHover:false,borderColor:css("--line"),borderWidth:.5},
+  done:d=>{svg=d.svg;
+    svg.selectAll(".datamaps-subunit").on("click",g=>{if(moved)return;cur={id:g.id,name:nm(g)||g.properties.name};render();sheet.classList.add("open")});
+    paint();ap()}});
+window.addEventListener("resize",()=>{dm.resize&&dm.resize();ap()});
+</script></body></html>
